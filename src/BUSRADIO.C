@@ -21,6 +21,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>          /* isspace() for line validation */
 #include <bios.h>
@@ -45,14 +46,16 @@ static void usage(void)
 {
     puts("BUSRADIO - play a song over an AM radio via memory bus RF emission\r");
     puts("\r");
-    puts("  BUSRADIO [-r] <songfile>\r");
+    puts("  BUSRADIO [-r] [-d BUSDIV] <songfile>\r");
     puts("  BUSRADIO -h\r");
     puts("\r");
     puts("    -r          repeat the song until a key is pressed\r");
+    puts("    -d BUSDIV   bus divisor for this machine (default 55000)\r");
     puts("    -h          show this help\r");
     puts("\r");
     puts("Song file: one `freq_hz duration_ms' per line. freq 0 is a rest.\r");
-    puts("Text from ; to end of line is a comment.\r");
+    puts("Text from ; to end of line is a comment.  The bus divisor sets\r");
+    puts("note pitch and rest length.\r");
 }
 
 /* Read the song one line at a time and tokenize into note_table.  Strip any
@@ -174,7 +177,7 @@ static int play_once(void)
  *
  * Returns:
  *   0  done, or help shown (-h)
- *   1  usage error (bad/missing argument or filename)
+ *   1  usage error (bad/missing argument, -d value, or filename)
  *   2  song file won't open
  *   4  malformed song line, or too many notes
  */
@@ -183,11 +186,20 @@ int main(int argc, char **argv)
     int argument_index;
     int have_filename = 0;
     int result;
+    unsigned long parsed_divisor;
+    char *parse_end;
 
     for (argument_index = 1; argument_index < argc; argument_index++) {
         char *argument = argv[argument_index];
         if (strcmp(argument, "-r") == 0) {
             repeat_flag = 1;
+        } else if (strcmp(argument, "-d") == 0 && argument_index + 1 < argc) {
+            parsed_divisor = strtoul(argv[++argument_index], &parse_end, 10);
+            if (*parse_end != '\0' || parsed_divisor == 0) {
+                printf("Invalid -d value.\r\n");
+                return 1;
+            }
+            bus_divisor = parsed_divisor;
         } else if (strcmp(argument, "-h") == 0) {
             usage();
             return 0;

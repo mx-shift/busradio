@@ -91,10 +91,11 @@ Output lands in `src\BUILD\`.
 
 ## BUSRADIO
 
-    BUSRADIO [-r] <songfile>
+    BUSRADIO [-r] [-d BUSDIV] <songfile>
     BUSRADIO -h
 
     -r          repeat the song until a key is pressed
+    -d BUSDIV   bus divisor for this machine (default 55000)
     -h          show this help
 
 Song files are one note per line, `<freq_Hz> <duration_ms>`. `freq 0`
@@ -110,6 +111,7 @@ Up to 2048 notes per file.
 Examples:
 
     BUSRADIO SCALE.TXT             -- C-major scale at the default divisor
+    BUSRADIO -d 55000 SCALE.TXT   -- with an explicit bus divisor
     BUSRADIO -r SCALE.TXT         -- loop until keypress
 
 `songs/SCALE_REF.WAV` is a reference recording of what the scale should
