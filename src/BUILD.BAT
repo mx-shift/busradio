@@ -14,12 +14,14 @@ REM See the License for the specific language governing permissions and
 REM limitations under the License.
 
 REM Build BUSRADIO
-REM Assumes TCC, TLINK on PATH and INCLUDE, LIB env set; cwd = this folder
+REM Assumes TCC, TLINK, ML on PATH and INCLUDE, LIB env set; cwd = this folder
 REM Outputs land in .\BUILD
 if not exist BUILD\NUL md BUILD
 echo --BUSRADIO-- > BUILD\BUILD.LOG
 echo --TCC-- >> BUILD\BUILD.LOG
 tcc -c -ms -I%INCLUDE% -nBUILD\ BUSRADIO.C >> BUILD\BUILD.LOG
+echo --ML-- >> BUILD\BUILD.LOG
+ml /c /nologo /FoBUILD\BRLOOPS.OBJ BRLOOPS.ASM >> BUILD\BUILD.LOG
 echo --TLINK-- >> BUILD\BUILD.LOG
-tlink /c %LIB%\C0S.OBJ BUILD\BUSRADIO.OBJ, BUILD\BUSRADIO.EXE, BUILD\BUSRADIO.MAP, %LIB%\CS.LIB >> BUILD\BUILD.LOG
+tlink /c %LIB%\C0S.OBJ BUILD\BUSRADIO.OBJ BUILD\BRLOOPS.OBJ, BUILD\BUSRADIO.EXE, BUILD\BUSRADIO.MAP, %LIB%\CS.LIB >> BUILD\BUILD.LOG
 echo --DONE-- >> BUILD\BUILD.LOG

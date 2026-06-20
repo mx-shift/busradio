@@ -4,3 +4,6 @@
 # DOS toolchain sources and song files check out as CRLF.
 src/*       text eol=crlf
 songs/*.TXT text eol=crlf
+
+# Binary assets — never touch.
+songs/*.WAV binary

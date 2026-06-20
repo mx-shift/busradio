@@ -24,14 +24,20 @@
 #include <string.h>
 #include <ctype.h>          /* isspace() for line validation */
 #include <bios.h>
+#include <dos.h>            /* disable()/enable() around the emission */
 
+#define DEFAULT_BUS_DIVISOR     55000UL    /* tuned for 8 MHz 80286 */
 #define MAX_NOTES               2048
 #define LINE_LENGTH             256
 #define FILENAME_LENGTH         80
 
-static unsigned note_table[MAX_NOTES][2];   /* [0]=freq_hz (0=rest), [1]=duration_ms */
+extern void emit_tone(unsigned half_period, unsigned cycle_count);
+extern void emit_silence(unsigned iterations);
+
+static unsigned note_table[MAX_NOTES][2];   /* [0]=half_period (0=rest), [1]=cycles/ms */
 static unsigned note_count = 0;
 
+static unsigned long bus_divisor = DEFAULT_BUS_DIVISOR;
 static int repeat_flag = 0;
 static char song_filename[FILENAME_LENGTH];
 
@@ -52,8 +58,8 @@ static void usage(void)
 /* Read the song one line at a time and tokenize into note_table.  Strip any
  * trailing comment by NUL-ing at the ';' -- this keeps the note on lines like
  * `0 125 ; rest'.  Blank, whitespace-only, and comment-only lines are
- * skipped; any other line that isn't a `freq duration' pair -- or whose freq
- * or duration exceeds 65535 -- is a hard error naming the line.
+ * skipped; any other line that isn't a `freq duration_ms' pair -- or whose
+ * freq or duration exceeds 65535 -- is a hard error naming the line.
  *
  * Returns:
  *    0  success
@@ -68,7 +74,7 @@ static int load_song(const char *path)
     char *comment_start, *cursor;
     char extra_field[2];
     unsigned line_number = 0;
-    unsigned long frequency, duration;
+    unsigned long frequency, duration, half_period, cycle_count;
 
     song_file = fopen(path, "r");   /* text mode: \r\n -> \n on DOS */
     if (song_file == NULL) return -1;
@@ -104,8 +110,20 @@ static int load_song(const char *path)
         }
 
         if (note_count >= MAX_NOTES) { fclose(song_file); return -2; }
-        note_table[note_count][0] = (unsigned)frequency;
-        note_table[note_count][1] = (unsigned)duration;
+
+        if (frequency == 0) {
+            note_table[note_count][0] = 0;
+            note_table[note_count][1] = (unsigned)duration;
+        } else {
+            half_period = bus_divisor / frequency;
+            if (half_period == 0) half_period = 1;               /* floor */
+            if (half_period > 0xFFFFUL) half_period = 0xFFFFUL;  /* cap */
+            cycle_count = frequency * duration / 1000UL;
+            if (cycle_count == 0) cycle_count = 1;
+            if (cycle_count > 0xFFFFUL) cycle_count = 0xFFFFUL;
+            note_table[note_count][0] = (unsigned)half_period;
+            note_table[note_count][1] = (unsigned)cycle_count;
+        }
         note_count++;
     }
     fclose(song_file);
@@ -123,10 +141,31 @@ static int play_once(void)
     unsigned note_index;
     for (note_index = 0; note_index < note_count; note_index++) {
         if (bioskey(1)) {
-            (void)bioskey(0);
+            (void)bioskey(0);   /* drain one keystroke */
             return 1;
         }
-        /* playback goes here */
+        if (note_table[note_index][0] == 0) {
+            /* Rest: timed by the SAME bus_divisor-calibrated loop as notes,
+             * carrier off (silence).  iters = 2*bd*ms/1000 -- frequency
+             * cancels out of a note's per-ms iteration count, so one
+             * calibration times notes and rests alike.  Chunk past 65535.
+             */
+            unsigned long rest_iterations =
+                2UL * bus_divisor *
+                (unsigned long)note_table[note_index][1] / 1000UL;
+            disable();
+            while (rest_iterations > 0UL) {
+                unsigned chunk_iterations = (rest_iterations > 0xFFFFUL)
+                    ? 0xFFFFU : (unsigned)rest_iterations;
+                emit_silence(chunk_iterations);
+                rest_iterations -= chunk_iterations;
+            }
+            enable();
+        } else {
+            disable();      /* interrupts off for the note -> clean carrier */
+            emit_tone(note_table[note_index][0], note_table[note_index][1]);
+            enable();       /* back on between notes (keyboard poll, timer) */
+        }
     }
     return 0;
 }
@@ -182,7 +221,8 @@ int main(int argc, char **argv)
     }
     /* result 0: loaded OK, fall through to play */
 
-    printf("Loaded %u notes.\r\n", note_count);
+    printf("Bus divisor: %lu\r\n", bus_divisor);
+    printf("Playing. Tune AM radio 540-1600 kHz. Any key to stop.\r\n");
 
     do {
         if (play_once() != 0) break;
