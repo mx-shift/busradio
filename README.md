@@ -264,5 +264,3 @@ good deal of time cleaning the code up so others can enjoy it and learn
 from it. I reviewed every line before publishing; if something here is
 wrong, that is on me — Claude generated the text on request, but I read
 and shipped it.
-
-Released under the Apache License 2.0 — see `LICENSE`.
