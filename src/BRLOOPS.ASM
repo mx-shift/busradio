@@ -43,15 +43,19 @@ emit_tone PROC C USES bx di, half_period:WORD, cycle_count:WORD
         xor     ax, ax                    ; data = 0 (data bus does not radiate)
                                           ; emit_tone does NOT touch interrupts -- the
                                           ; CALLER owns the policy.  BUSRADIO wraps this
-                                          ; in cli/sti (no DMA -> total silence).
+                                          ; in cli/sti (no DMA -> total silence); BDTUNE
+                                          ; masks every IRQ except the SB DMA-restart so
+                                          ; the single-cycle capture stays alive (steady
+                                          ; pitch) without timer/keyboard bus hash.
 et_cycle:
         or      bx, bx
         jz      et_done
         dec     bx
 
         ; --- BURST: di+0 / di+07FEh flips
-        ;     address bits A1..A10 together every store -> one strong carrier
-        ;     at ~1500 kHz. ---
+        ;     address bits A1..A10 together every store -> one strong carrier.
+        ;     A single bd calibrates BUSRADIO and BDTUNE; both put the carrier
+        ;     at the same dial frequency (~1500 kHz). ---
         mov     cx, [et_halfper]
 et_burst:
         mov     word ptr [di+0], ax

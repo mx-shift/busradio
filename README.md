@@ -18,6 +18,7 @@ Released under the Apache License 2.0 — see `LICENSE`.
 | Program    | What it does |
 |------------|--------------|
 | `BUSRADIO` | Plays song files (`freq_Hz duration_ms` per line) as tones on a nearby AM radio. |
+| `BDTUNE`   | Calibrates the per-machine `bus_divisor` so notes are in tune (needs a Sound Blaster to listen back). |
 
 ---
 
@@ -69,7 +70,7 @@ That's on-off keying: the carrier times a 50% square wave at `f`, with
 sidebands at carrier ± `f` — the *rate* of alternation is the pitch.
 
 `bus_divisor` is a per-CPU calibration constant (default 55000 for an
-8 MHz 286; faster CPUs need more).
+8 MHz 286; faster CPUs need more). `BDTUNE` finds yours.
 
 Rests reuse it: a `D` ms rest is `2·bus_divisor·D/1000` carrier-off
 iterations (frequency cancels out of a note's count), so one number sets
@@ -116,3 +117,46 @@ Examples:
 
 `songs/SCALE_REF.WAV` is a reference recording of what the scale should
 sound like, handy while calibrating.
+
+---
+
+## Calibrating
+
+Almost every pitch or timing problem is a wrong `bus_divisor`. `BDTUNE`
+finds yours in two passes — TUNE to lock the dial, then CAL to trim the
+divisor:
+
+1. Run `BDTUNE`: it emits a reference tone and records the radio back
+   through a Sound Blaster ADC. Put an AM radio within ~30 cm of the case
+   and patch its headphone/line output into the SB input you pick with
+   `-i`.
+2. **TUNE** — sweep the dial near 1500 kHz while BDTUNE reports the tone's
+   SNR; stop where it peaks (higher is better, ~12 dB+ usable), then press
+   SPACE to switch to CAL.
+3. **CAL** — adjust `bus_divisor` until the recovered tone matches the
+   target: `BDTUNE`'s keys do progressively finer steps and `a` auto-snaps
+   via its Goertzel filter. The value it lands on is what you pass to every
+   program here.
+
+Rough starting points (BDTUNE finds the exact value):
+
+| CPU            | `bus_divisor` |
+|----------------|---------------|
+| 6 MHz 80286    | ~41000        |
+| 8 MHz 80286    | 55000         |
+| 12 MHz 80286   | ~82000        |
+
+### BDTUNE — calibration
+
+    BDTUNE [-t HZ] [-d BUSDIV] [-i SRC]
+    BDTUNE -h
+
+    -t HZ      target tone frequency (default 400)
+    -d BUSDIV  starting bus divisor (default 55000)
+    -i SRC     SB recording input: mic, line, or cd (default line)
+    -h         show this help
+
+`BDTUNE` reads the Sound Blaster's I/O from the `BLASTER` environment
+variable (A/I/D fields; defaults to A220 I5 D1 if unset). The default
+target is 400 Hz — well inside an AM receiver's audio passband, where
+the tone is loud and the match is unambiguous.
