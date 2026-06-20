@@ -1,0 +1,20 @@
+; scale.txt - ascending C major scale, quarter notes at 120 BPM
+; (500 ms per quarter note)
+; Tune with BDTUNE, then: BUSRADIO -d <busdiv> SCALE.TXT
+262 500
+294 500
+330 500
+349 500
+392 500
+440 500
+494 500
+523 500
+0   500
+523 250
+494 250
+440 250
+392 250
+349 250
+330 250
+294 250
+262 500

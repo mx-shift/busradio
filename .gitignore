@@ -1,0 +1,6 @@
+# build outputs
+src/BUILD/
+
+# Editor / OS noise
+*.swp
+.DS_Store
