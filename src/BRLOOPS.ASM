@@ -54,8 +54,10 @@ et_cycle:
 
         ; --- BURST: di+0 / di+07FEh flips
         ;     address bits A1..A10 together every store -> one strong carrier.
-        ;     A single bd calibrates BUSRADIO and BDTUNE; both put the carrier
-        ;     at the same dial frequency (~1500 kHz). ---
+        ;     This inner loop is byte-for-byte identical to BRPLAY's
+        ;     play_pcm_chunk burst, so a single bd calibrates BUSRADIO,
+        ;     BDTUNE and BRPLAY, and all three put the carrier at the same
+        ;     dial frequency (~1500 kHz). ---
         mov     cx, [et_halfper]
 et_burst:
         mov     word ptr [di+0], ax
@@ -71,7 +73,7 @@ et_burst:
 
         ; --- QUIET: fixed-address stores -> no toggle -> carrier off.
         ;     Memory stores (not register adds) keep the bus busy so the BIU
-        ;     can't prefetch -> no between-station hash. ---
+        ;     can't prefetch -> no between-station hash. Matches BRPLAY. ---
         mov     cx, [et_halfper]
 et_quiet:
         mov     word ptr [di+0], ax

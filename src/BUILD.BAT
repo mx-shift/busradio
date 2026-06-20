@@ -13,7 +13,7 @@ REM WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 REM See the License for the specific language governing permissions and
 REM limitations under the License.
 
-REM Build BUSRADIO and BDTUNE
+REM Build BUSRADIO, BDTUNE, and BRPLAY
 REM Assumes TCC, TLINK, ML on PATH and INCLUDE, LIB env set; cwd = this folder
 REM Outputs land in .\BUILD
 if not exist BUILD\NUL md BUILD
@@ -29,4 +29,11 @@ echo --TCC-- >> BUILD\BUILD.LOG
 tcc -c -ms -w-eff -I%INCLUDE% -nBUILD\ BDTUNE.C >> BUILD\BUILD.LOG
 echo --TLINK-- >> BUILD\BUILD.LOG
 tlink /c %LIB%\C0S.OBJ BUILD\BDTUNE.OBJ BUILD\BRLOOPS.OBJ, BUILD\BDTUNE.EXE, BUILD\BDTUNE.MAP, %LIB%\CS.LIB >> BUILD\BUILD.LOG
+echo --BRPLAY-- >> BUILD\BUILD.LOG
+echo --TCC-- >> BUILD\BUILD.LOG
+tcc -c -ms -w-eff -I%INCLUDE% -nBUILD\ BRPLAY.C >> BUILD\BUILD.LOG
+echo --ML-- >> BUILD\BUILD.LOG
+ml /c /nologo /FoBUILD\BRPLOOPS.OBJ BRPLOOPS.ASM >> BUILD\BUILD.LOG
+echo --TLINK-- >> BUILD\BUILD.LOG
+tlink /c %LIB%\C0S.OBJ BUILD\BRPLAY.OBJ BUILD\BRPLOOPS.OBJ, BUILD\BRPLAY.EXE, BUILD\BRPLAY.MAP, %LIB%\CS.LIB >> BUILD\BUILD.LOG
 echo --DONE-- >> BUILD\BUILD.LOG
