@@ -1,4 +1,4 @@
-# busradio: AM-radio audio over an IBM PC AT's bus emissions
+# busradio: AM radio over an IBM PC AT's bus emissions
 
 Turn an unmodified IBM PC AT (80286) into a crude AM transmitter by
 deliberately leaking RF off the system bus — no DAC, no Sound Blaster
@@ -255,7 +255,7 @@ inner loops, the delta-sigma + dither precompute path, the WAV
 preparation pipeline, and the calibration arithmetic; it ran most of the
 experiments in DOSBox-X and analyzed the radio captures. I directed the
 architecture, chose which experiments to keep or revert, did the antenna
-placement and physical AM-radio testing, and made the calls that actually
+placement and physical AM radio testing, and made the calls that actually
 mattered.
 
 These programs are a clever hack, fit for amusement and nothing else — no
